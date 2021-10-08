@@ -1,0 +1,13 @@
+{
+    "name": "trailer-downloader",
+    "description": "Downloader of trailer for films/séries",
+    "homepage": "https://github.com/Steelataure/Trailer-downloader",
+    "version": "1.0.0",
+    "keywords": ["trailer, downloader"],
+    "author": {
+      "name": "Alexandre Buisset",
+      "email": "alexandre0312@orange.fr",
+      "url": "https://github.com/Steelataure"
+    },
+    "license": "Not choiced"
+}
