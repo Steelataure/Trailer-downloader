@@ -6,7 +6,7 @@ Application permettant de télécharger directement les bandes d'annonces de vos
 
 # Aperçu
 
-![Aperçu](https://github.com/Steelataure/Trailer-downloader/blob/main/assets/aper%C3%A7u.PNG)
+![Aperçu](https://github.com/Steelataure/Trailer-downloader/blob/main/assets/aper%C3%A7u.png)
 
 ## Auteur 
 
