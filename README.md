@@ -4,7 +4,7 @@
 
 Application permettant de télécharger directement les bandes d'annonces de vos films, séries etc et / ou les ouvrir via Youtube.
 
-# Installation
+## Installation
 
 Afin d'ouvrir l'application, téléchargez le fichier, extraire le fichier.  
 Ensuite ouvrez le terminal de commande (cmd) et faites les commandes ci-dessous : 
