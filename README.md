@@ -30,7 +30,7 @@ Python main.py
 
 ![Aperçu](https://github.com/Steelataure/Trailer-downloader/blob/main/assets/aper%C3%A7u.png)
 
-# Comment ça marche
+# Comment ça marche ?
 
 C'est simple : 
 * Indiquez le path de votre dossier auquel vous disposez vos films, séries etc.  
