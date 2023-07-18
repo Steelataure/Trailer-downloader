@@ -6,73 +6,85 @@ from os import walk
 from pathlib import Path
 from tkinter import *
 from pytube import Search
+
+import pytube.exceptions
 from pytube import YouTube
 
-'''
-Programme qui télécharge les bandes d'annonces de vos films
 
-DEPOSEZ-VOS FILMS DANS LE DOSSIER series-films
-'''
-
-# CHANGER DE PATH OU MIGREZ VOS VIDEOS DANS CE DOSSIER
-path_film = 'series-films/'
-path_trailer = 'trailer/'
 downloads_path = (str(Path.home() / "Downloads").replace("\\", "/") + '/')
-
-listeFichiers = []
-is_on = True
+liste_fichiers = []
+is_auto_play_on = True
+downloaded_movies = set()  # Utiliser un ensemble pour stocker les noms des films déjà téléchargés
+opened_videos = set()  # Utiliser un ensemble pour stocker les vidéos déjà ouvertes sur YouTube
 
 
 class Application(tk.Tk):
     def __init__(self):
-        tk.Tk.__init__(self)
-        self.creer_widgets()
 
+        super().__init__()  # Appel du constructeur de la classe parente (Tk)
+        self.creer_widgets()
 
     def files_management(self):
         test = self.path_entry.get()
         for (repertoire, sousRepertoires, fichiers) in walk(test):
-            listeFichiers.extend(fichiers)
-            print(listeFichiers)
+            liste_fichiers.extend(fichiers)
+            print(liste_fichiers)
             print(self.path_entry.get())
 
             break
         else:
             print("Le chemin n'existe pas ou n'est pas bien indiqué")
-            # Mettre une alerte box
 
 
     def download(self):
-        for n in range(len(listeFichiers)):
-            if not (not ('.mp4' in listeFichiers[n]) and not ('.avi' in listeFichiers[n]) and not (
-                    '.mkv' in listeFichiers[n]) and not ('.mov' in listeFichiers[n]) and not (
-                    '.webm' in listeFichiers[n]) and not ('.mpeg' in listeFichiers[n])):
+        for fichier in liste_fichiers:
+            # Vérifie si le fichier est un fichier vidéo
+            if any(ext in fichier for ext in ['.mp4', '.avi', '.mkv', '.mov', '.webm', '.mpeg']):
+                film_name = fichier[:15]  # Extrait le nom du film à partir du nom du fichier (15 premiers caractères)
+                if not self.is_movie_downloaded(film_name):
+                    video_url = self.get_video_url(film_name)
+                    if video_url:
+                        if is_auto_play_on:
+                            self.open_video(video_url)
+                        else:
+                            self.download_video(video_url, self.path_entry2.get(), film_name)
+                        downloaded_movies.add(film_name)  # Ajouter le film à l'ensemble des téléchargements
 
-                selection = str(listeFichiers[n][0:15])  # Nombre de caractères pris
-                s = Search(selection + " Bande d'annonce VF")
-                new = str((s.results[0]))
+    def is_movie_downloaded(self, film_name):
+        return film_name in downloaded_movies
 
-                with open('assets/stats.txt', 'r+') as files:
-                    files.write(new + '\n')
+    def get_video_url(self, film_name):
+        s = Search(film_name + " Bande d'annonce VF")
+        try:
+            new = str((s.results[0]))
+        except IndexError:
+            print(f"Aucune bande-annonce trouvée pour {film_name}.")
+            return None
+        with open('assets/stats.txt', 'r+') as files:
+            files.write(new + '\n')
+        with open('assets/stats.txt', 'r+') as files:
+            ouverture = (files.readline(52).split('Id='))
+            video_id = ouverture[+1]
+        return f"https://www.youtube.com/watch?v={video_id}"
 
-                with open('assets/stats.txt', 'r+') as files:
-                    ouverture = (files.readline(52).split('Id='))
+    def open_video(self, video_url):
+        webbrowser.open(video_url)
 
-                    id = (ouverture[+1])
-
-                video = f"https://www.youtube.com/watch?v={id}"
-
-                if is_on:
-                    webbrowser.open(f"https://www.youtube.com/watch?v={id}")
-
-                yt = YouTube(video)
-                yt.streams \
-                    .filter(progressive=True, file_extension='mp4') \
-                    .order_by('resolution') \
-                    .desc() \
-                    .first() \
-                    .download(self.path_entry2.get())
-
+    def download_video(self, video_url, download_path, film_name):
+        try:
+            yt = YouTube(video_url)
+            yt.streams \
+                .filter(progressive=True, file_extension='mp4') \
+                .order_by('resolution') \
+                .desc() \
+                .first() \
+                .download(download_path)
+        except pytube.exceptions.AgeRestrictedError:
+            print(f"La vidéo pour {film_name} est restreinte en raison de l'âge. Ignorer et passer au suivant.")
+        except Exception as e:
+            print(f"Une erreur s'est produite lors du téléchargement de la vidéo pour {film_name}: {str(e)}")
+        else:
+            print(f"Téléchargement réussi pour {film_name}")
 
     def creer_widgets(self):
         background_image = PhotoImage(file="assets/Trailer2.png")
@@ -81,7 +93,7 @@ class Application(tk.Tk):
         self.background.place(x=-16, y=0)
 
         self.my_label = Label(self,
-                              text="Ouvrir les bande d'annonce via Youtube",
+
                               fg="green", bg='white',
                               font=("Arial", 15))
 
@@ -98,13 +110,15 @@ class Application(tk.Tk):
 
         # Entry the path
         self.path_entry = tk.Entry(self, width=40)
-        self.path_entry.insert(END, path_film)
+        self.path_entry.insert(END, downloads_path)
         self.path_entry.configure(font=('Arial', 15))
         self.path_entry.place(x=100, y=270)
 
         self.path_entry2 = tk.Entry(self, width=40)
-        self.path_entry2.insert(END, path_trailer)
+
         self.path_entry2.configure(font=('Arial', 15))
+        self.path_entry2.insert(END, downloads_path + "Trailer")
+
         self.path_entry2.place(x=100, y=380)
 
         # Button Start
@@ -115,24 +129,22 @@ class Application(tk.Tk):
         self.Button_start.place(x=210, y=450)
 
     def switch(self):
-        global is_on
-        # Determine is on or off
-        if is_on:
+
+        global is_auto_play_on
+        # Determine si le switch est sur ON ou OFF
+        if is_auto_play_on:
             self.on_button.config(image=self.off)
             self.my_label.config(text="Ne pas ouvrir les bandes d'annonces via Youtube",
                                  fg="grey")
-            is_on = False
-
+            is_auto_play_on = False
         else:
             self.on_button.config(image=self.on)
             self.my_label.config(text="Ouvrir les bandes d'annonces via Youtube", fg="green")
-            is_on = True
-
+            is_auto_play_on = True
 
     def start(self):
         self.files_management()
         self.download()
-
 
 
 def main():
@@ -143,9 +155,6 @@ def main():
     app.iconbitmap('assets/trailer.ico')
 
     app.mainloop()
-
-
-# ------------------------------------------------
 
 if __name__ == '__main__':
     main()
